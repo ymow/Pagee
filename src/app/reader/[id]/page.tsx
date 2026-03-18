@@ -34,11 +34,16 @@ export default function ReaderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentChapter, setCurrentChapter] = useState<{ title: string; text: string } | null>(null);
   const currentChapterRef = useRef<{ title: string; text: string } | null>(null);
+  const messagesRef = useRef(messages);
+  const isLoadingRef = useRef(isLoading);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     currentChapterRef.current = currentChapter;
   }, [currentChapter]);
+
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
 
   useEffect(() => {
     if (!id) return;
@@ -69,7 +74,7 @@ export default function ReaderPage() {
   }, [messages, isLoading]);
 
   const handleSendMessage = useCallback(async (text: string, displayPrompt?: string) => {
-    if (!text.trim() || isLoading) return;
+    if (!text.trim() || isLoadingRef.current) return;
 
     const userMessage = { role: "user" as const, content: displayPrompt || text };
     setMessages(prev => [...prev, userMessage]);
@@ -88,7 +93,7 @@ export default function ReaderPage() {
           ? PROMPTS.DYNAMIC_SYSTEM(book.metadata?.title || book.name, book.metadata?.author) 
           : PROMPTS.SYSTEM;
         
-      const response = await askAI([...messages, { role: "user", content: text }], systemPrompt);
+      const response = await askAI([...messagesRef.current, { role: "user", content: text }], systemPrompt);
       const assistantMessage = response.content[0].text;
       setMessages(prev => [...prev, { role: "assistant" as const, content: assistantMessage }]);
     } catch (err: unknown) {
@@ -98,7 +103,7 @@ export default function ReaderPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [book, isLoading, messages]);
+  }, [book]);
 
   const handleSelectionAction = useCallback(async (action: string, text: string) => {
     let prompt = "";

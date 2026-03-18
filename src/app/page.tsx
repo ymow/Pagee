@@ -59,7 +59,7 @@ export default function LandingPage() {
       } else {
         format = "epub";
         try {
-          const book = ePub(arrayBuffer);
+          const book = ePub(arrayBuffer.slice(0));
           const meta = await book.loaded.metadata;
           metadata = {
             title: meta.title || file.name,
