@@ -12,7 +12,7 @@ export interface BookRecord {
     publisher?: string;
     description?: string;
     language?: string;
-    cover?: string; // URL or Base64
+    cover?: string;
   };
 }
 

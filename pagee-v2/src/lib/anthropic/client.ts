@@ -48,16 +48,29 @@ ${context.text}
     `請分析以下內容中出現的角色，識別其名稱、性格特點以及與他人的關係：\n\n${content}`
 };
 
-export async function askAI(messages: { role: string; content: string }[], system?: string) {
-  const response = await fetch("/api/chat", {
+export async function askAI(messages: { role: string; content: string }[], system?: string, apiKey?: string) {
+  // In a pure React SPA, we call Anthropic directly if the user provides an API key,
+  // or we call our own Hono backend proxy. For MVP BYOK, we can call directly.
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, system }),
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey || "",
+      "anthropic-version": "2023-06-01",
+      "dangerously-allow-browser": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: system || PROMPTS.SYSTEM,
+      messages: messages,
+      temperature: 0.4,
+    }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "AI 請求失敗");
+    throw new Error(error.error?.message || "AI 請求失敗");
   }
 
   return response.json();
