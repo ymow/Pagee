@@ -31,12 +31,14 @@ export default function LandingPage() {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const format = file.name.endsWith(".txt") ? "txt" : "epub";
+      let format: "epub" | "txt" | "pdf" = "epub";
+      if (file.name.endsWith(".txt")) format = "txt";
+      if (file.name.endsWith(".pdf")) format = "pdf";
       
       const id = await db.books.add({
         name: file.name,
         data: arrayBuffer,
-        format: format as "epub" | "txt",
+        format,
         lastRead: Date.now(),
       });
 
@@ -53,6 +55,7 @@ export default function LandingPage() {
     accept: {
       "application/epub+zip": [".epub"],
       "text/plain": [".txt"],
+      "application/pdf": [".pdf"],
     },
     multiple: false,
   });

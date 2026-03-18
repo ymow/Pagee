@@ -4,8 +4,19 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { db, type BookRecord } from "@/lib/store/db";
 import EpubViewer from "@/components/reader/EpubViewer";
+import TxtViewer from "@/components/reader/TxtViewer";
+import dynamic from "next/dynamic";
 import { Loader2, Send, Bot, User, Sparkles, FileText, Users } from "lucide-react";
 import { askAI, PROMPTS } from "@/lib/anthropic/client";
+
+const PdfViewer = dynamic(() => import("@/components/reader/PdfViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+    </div>
+  ),
+});
 
 interface Message {
   role: "user" | "assistant";
@@ -109,12 +120,6 @@ export default function ReaderPage() {
     handleSendMessage(prompt, `分析「${currentChapter.title}」中的角色關係`);
   };
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isLoading]);
-
   if (error) {
     return (
       <div className="h-screen flex flex-col items-center justify-center space-y-4">
@@ -140,12 +145,28 @@ export default function ReaderPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-stone-50">
       <div className={`flex-1 transition-all duration-300 relative ${isChatOpen ? "mr-[400px]" : ""}`}>
-        <EpubViewer 
-          data={book.data} 
-          onToggleChat={() => setIsChatOpen(!isChatOpen)}
-          onSelectionAction={handleSelectionAction}
-          onChapterChange={(title, text) => setCurrentChapter({ title, text })}
-        />
+        {book.format === "pdf" ? (
+          <PdfViewer
+            data={book.data}
+            onToggleChat={() => setIsChatOpen(!isChatOpen)}
+            onSelectionAction={handleSelectionAction}
+            onChapterChange={(title, text) => setCurrentChapter({ title, text })}
+          />
+        ) : book.format === "txt" ? (
+          <TxtViewer
+            data={book.data}
+            onToggleChat={() => setIsChatOpen(!isChatOpen)}
+            onSelectionAction={handleSelectionAction}
+            onChapterChange={(title, text) => setCurrentChapter({ title, text })}
+          />
+        ) : (
+          <EpubViewer 
+            data={book.data} 
+            onToggleChat={() => setIsChatOpen(!isChatOpen)}
+            onSelectionAction={handleSelectionAction}
+            onChapterChange={(title, text) => setCurrentChapter({ title, text })}
+          />
+        )}
       </div>
       
       {/* AI Sidebar (F-04) */}

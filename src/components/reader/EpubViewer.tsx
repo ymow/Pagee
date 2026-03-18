@@ -30,7 +30,10 @@ export default function EpubViewer({
   useEffect(() => {
     if (!viewerRef.current || !data) return;
 
-    const book = ePub(data);
+    // We pass data directly; if epubjs doesn't recognize it as ArrayBuffer due to window context issues,
+    // we slice it to ensure it's a fresh ArrayBuffer in this context.
+    const buffer = data.slice(0);
+    const book = ePub(buffer);
     bookRef.current = book;
 
     const rendition = book.renderTo(viewerRef.current, {
@@ -54,19 +57,21 @@ export default function EpubViewer({
       onLocationChange?.(loc.start.cfi);
       
       // Extract chapter info (F-05)
-      const section = book.spine.get(loc.start.cfi);
-      if (section) {
-        const chapter = book.navigation.get(section.href);
-        const chapterTitle = chapter ? chapter.label : "未命名章節";
-        
-        // Extract plain text from section
-        try {
+      try {
+        const section = book.spine.get(loc.start.cfi);
+        if (section) {
+          const chapter = book.navigation.get(section.href);
+          const chapterTitle = chapter ? chapter.label : "未命名章節";
+          
+          // Extract plain text from section more safely
           const doc = await section.load(book.load.bind(book)) as Document;
-          const text = doc.body.innerText || doc.body.textContent || "";
-          onChapterChange?.(chapterTitle, text);
-        } catch (e) {
-          console.warn("Failed to extract chapter text", e);
+          if (doc && doc.body) {
+            const text = doc.body.innerText || doc.body.textContent || "";
+            onChapterChange?.(chapterTitle, text);
+          }
         }
+      } catch (e) {
+        console.warn("Failed to extract chapter text", e);
       }
     });
 
@@ -97,7 +102,13 @@ export default function EpubViewer({
 
     return () => {
       if (bookRef.current) {
-        bookRef.current.destroy();
+        try {
+          if (typeof bookRef.current.destroy === "function") {
+            bookRef.current.destroy();
+          }
+        } catch (e) {
+          console.warn("Epub cleanup error:", e);
+        }
       }
     };
   }, [data, onLocationChange, onChapterChange]);

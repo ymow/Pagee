@@ -4,7 +4,7 @@ export interface BookRecord {
   id?: number;
   name: string;
   data: ArrayBuffer;
-  format: "epub" | "txt";
+  format: "epub" | "txt" | "pdf";
   lastRead: number;
   metadata?: {
     title?: string;

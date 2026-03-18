@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     }
 
     const response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20240620",
+      model: "claude-sonnet-4-6",
       max_tokens: 1024,
       system: system || "你是一位專業的閱讀助手，擅長繁體中文閱讀理解與分析。",
       messages: messages,
